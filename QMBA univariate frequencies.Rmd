@@ -11,8 +11,27 @@ date: "2026-04-13"
 knitr::opts_chunk$set(echo = FALSE)
 library(readxl)
 library(ggplot2)
-customer_data <- read_excel("~/Desktop/Final_Project_QMBA/cleaned_customer_set.xlsx")
-customer_data$`Cumulative Spend ProductA` <- as.numeric(customer_data$`Cumulative Spend ProductA`)
+library(corrplot)
+customer_data <- read_excel("~/Desktop/Final_Project_QMBA/Trying.xlsx")
+
+# Convert columns that should be numeric but may be stored as text
+numeric_cols <- c(
+  "Region", "Age", "Education Years", "Employment Years", "Household Size",
+  "Household Income", "Number Pets", "umber Pets", "Home Owner", "Car Value",
+  "Commute Distance", "Credit Card Tenure", "TV Watching Hours",
+  "Coupon Redemption", "Brand Tenure Months", "Monthly Spend ProductA",
+  "Cumulative Spend ProductA", "Monthly Spend ProductB", "Cumulative Spend ProductB",
+  "Monthly Spend ProductC", "Cumulative Spend ProductC", "Total Avg Monthly Spend",
+  "High Value Customer"
+)
+
+numeric_cols <- intersect(numeric_cols, names(customer_data))
+
+safe_numeric <- function(x) {
+  as.numeric(gsub("[^0-9.-]", "", as.character(x)))
+}
+
+customer_data[numeric_cols] <- lapply(customer_data[numeric_cols], safe_numeric)
 theme_set(theme_minimal(base_size = 12))
 ```
 
@@ -20,6 +39,7 @@ theme_set(theme_minimal(base_size = 12))
 head(customer_data)
 str(customer_data)
 summary(customer_data)
+sum(is.na(customer_data))
 ```
 
 ```{r where_are_the_3_na}
@@ -40,13 +60,6 @@ ggplot(customer_data, aes(x = factor(Region, levels = 1:5))) +
 summary(customer_data$Age)
 ggplot(customer_data, aes(x = Age)) +
   geom_histogram(binwidth = 5, fill = "lightblue", color = "black", boundary = 0) +
-  geom_text(
-    stat = "bin",
-    binwidth = 5,
-    aes(label = after_stat(count)),
-    vjust = -0.3,
-    size = 3
-  ) +
   labs(title = "Age", x = "Age", y = "Count")
 ```
 
@@ -62,13 +75,6 @@ ggplot(customer_data, aes(x = `Education Years`)) +
 summary(customer_data$`Employment Years`)
 ggplot(customer_data, aes(x = `Employment Years`)) +
   geom_histogram(binwidth = 5, fill = "lightblue", color = "black", boundary = 0) +
-  geom_text(
-    stat = "bin",
-    binwidth = 5,
-    aes(label = after_stat(count)),
-    vjust = -0.3,
-    size = 3
-  ) +
   labs(title = "Employment Years", x = "Years", y = "Count")
 ```
 
@@ -81,6 +87,7 @@ ggplot(customer_data, aes(x = factor(`Household Size`))) +
 
 ```
 
+
 ```{r household_income_hist}
 summary(customer_data$`Household Income`)
 ggplot(customer_data, aes(x = `Household Income`)) +
@@ -90,8 +97,9 @@ ggplot(customer_data, aes(x = `Household Income`)) +
 ```
 
 ```{r number_pets_hist}
-summary(customer_data$`umber Pets`)
-ggplot(customer_data, aes(x = `Number Pets`)) +
+pet_col <- if ("Number Pets" %in% names(customer_data)) "Number Pets" else "umber Pets"
+summary(customer_data[[pet_col]])
+ggplot(customer_data, aes(x = .data[[pet_col]])) +
   geom_histogram(bins = 30, fill = "lightblue", color = "black") +
   labs(title = "Number Pets", x = "Pets", y = "Count")
 ```
@@ -112,30 +120,22 @@ ggplot(customer_data, aes(x = `Car Value`)) +
 ```
 
 ```{r commute_distance_hist}
+customer_data$`Commute Distance`[
+  !grepl("^[0-9.]+$", customer_data$`Commute Distance`)
+] <- NA
+
+customer_data$`Commute Distance` <- as.numeric(customer_data$`Commute Distance`)
 summary(customer_data$`Commute Distance`)
-ggplot(customer_data, aes(x = `Commute Distance`)) +
+ggplot(customer_data, aes(x =`Commute Distance`)) +
   geom_histogram(binwidth = 5, fill = "lightblue", color = "black", boundary = 0) +
-  geom_text(
-    stat = "bin",
-    binwidth = 5,
-    aes(label = after_stat(count)),
-    vjust = -0.3,
-    size = 3
-  ) +
   labs(title = "Commute Distance", x = "Distance", y = "Count")
+
 ```
 
 ```{r credit_card_tenure_hist}
 summary(customer_data$`Credit Card Tenure`)
 ggplot(customer_data, aes(x = `Credit Card Tenure`)) +
   geom_histogram(binwidth = 5, fill = "lightblue", color = "black", boundary = 0) +
-  geom_text(
-    stat = "bin",
-    binwidth = 5,
-    aes(label = after_stat(count)),
-    vjust = -0.3,
-    size = 3
-  ) +
   labs(title = "Credit Card Tenure", x = "Tenure", y = "Count")
 ```
 
@@ -143,13 +143,6 @@ ggplot(customer_data, aes(x = `Credit Card Tenure`)) +
 summary(customer_data$`TV Watching Hours`)
 ggplot(customer_data, aes(x = `TV Watching Hours`)) +
   geom_histogram(binwidth = 5, fill = "lightblue", color = "black", boundary = 0) +
-  geom_text(
-    stat = "bin",
-    binwidth = 5,
-    aes(label = after_stat(count)),
-    vjust = -0.3,
-    size = 3
-  ) +
   labs(title = "TV Watching Hours", x = "Hours", y = "Count")
 ```
 
@@ -349,50 +342,21 @@ ggplot(customer_data, aes(x = `News Subscriber`)) +
 num_data <- customer_data[sapply(customer_data, is.numeric)]
 corr_mat <- round(cor(num_data, use = "pairwise.complete.obs"), 3)
 corr_mat
-
-# Reorder variables by similarity
-ord <- hclust(as.dist(1 - abs(corr_mat)))$order
-corr_ord <- corr_mat[ord, ord]
-
-# Keep only lower triangle
-corr_ord[upper.tri(corr_ord)] <- NA
-corr_df <- as.data.frame(as.table(corr_ord))
-corr_df <- na.omit(corr_df)
-
-p <- ggplot(corr_df, aes(x = Var1, y = Var2, fill = Freq)) +
-  geom_tile(color = "white") +
-  geom_text(aes(label = sprintf("%.2f", Freq)), size = 2.7) +
-  scale_fill_gradient2(
-    low = "#2166ac",
-    mid = "white",
-    high = "#b2182b",
-    midpoint = 0,
-    limits = c(-1, 1)
-  ) +
-  coord_equal() +
-  labs(title = "Correlation Heatmap (Ordered, Lower Triangle)", x = "", y = "", fill = "Corr") +
-  theme_minimal() +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    panel.grid = element_blank()
-  )
-
-p
 ```
 
-```{r correlation_matrix_like_2_7}
-# Correlation matrix using classic heatmap style (not ggplot)
-simple_corr <- round(cor(num_data, use = "pairwise.complete.obs"), 4)
-simple_corr
-
-heatmap(
-  simple_corr,
-  Rowv = NA,
-  Colv = NA,
-  scale = "none",
-  col = colorRampPalette(c("blue", "white", "red"))(100),
-  margins = c(10, 10),
-  main = "Correlation Matrix Heatmap"
+```{r simple_correlation_circles_heatmap}
+corrplot(
+  corr_mat,
+  method = "circle",
+  type = "lower",
+  order = "hclust",
+  tl.col = "black",
+  tl.srt = 45,
+  addCoef.col = "black",
+  number.cex = 0.5,
+  col = colorRampPalette(c("#2166ac", "white", "#b2182b"))(200),
+  mar = c(0, 0, 1, 0),
+  title = "Simple Correlation Plot"
 )
 ```
 
