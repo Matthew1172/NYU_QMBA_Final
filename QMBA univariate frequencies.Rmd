@@ -1,0 +1,414 @@
+---
+title: "Final_QMBA_Project"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+date: "2026-04-13"
+---
+
+```{r setup}
+knitr::opts_chunk$set(echo = FALSE)
+library(readxl)
+library(ggplot2)
+customer_data <- read_excel("~/Desktop/Final_Project_QMBA/cleaned_customer_set.xlsx")
+customer_data$`Cumulative Spend ProductA` <- as.numeric(customer_data$`Cumulative Spend ProductA`)
+theme_set(theme_minimal(base_size = 12))
+```
+
+```{r overall_data_check}
+head(customer_data)
+str(customer_data)
+summary(customer_data)
+```
+
+```{r where_are_the_3_na}
+na_rows_productA <- which(is.na(customer_data$`Cumulative Spend ProductA`))
+na_rows_productA
+customer_data[na_rows_productA, c("CustomerID", "Cumulative Spend ProductA")]
+```
+
+```{r region_frequency}
+summary(customer_data$Region)
+ggplot(customer_data, aes(x = factor(Region, levels = 1:5))) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 3) +
+  labs(title = "Region Frequency Count", x = "Region", y = "Count")
+```
+
+```{r age_hist}
+summary(customer_data$Age)
+ggplot(customer_data, aes(x = Age)) +
+  geom_histogram(binwidth = 5, fill = "lightblue", color = "black", boundary = 0) +
+  geom_text(
+    stat = "bin",
+    binwidth = 5,
+    aes(label = after_stat(count)),
+    vjust = -0.3,
+    size = 3
+  ) +
+  labs(title = "Age", x = "Age", y = "Count")
+```
+
+```{r education_years_hist}
+summary(customer_data$`Education Years`)
+ggplot(customer_data, aes(x = `Education Years`)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 3) +
+  labs(title = "Education Years", x = "Years", y = "Count")
+```
+
+```{r employment_years_hist}
+summary(customer_data$`Employment Years`)
+ggplot(customer_data, aes(x = `Employment Years`)) +
+  geom_histogram(binwidth = 5, fill = "lightblue", color = "black", boundary = 0) +
+  geom_text(
+    stat = "bin",
+    binwidth = 5,
+    aes(label = after_stat(count)),
+    vjust = -0.3,
+    size = 3
+  ) +
+  labs(title = "Employment Years", x = "Years", y = "Count")
+```
+
+```{r household_size_hist}
+summary(customer_data$`Household Size`)
+ggplot(customer_data, aes(x = factor(`Household Size`))) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 3) +
+  labs(title = "Household Size", x = "Size", y = "Count")
+
+```
+
+```{r household_income_hist}
+summary(customer_data$`Household Income`)
+ggplot(customer_data, aes(x = `Household Income`)) +
+  geom_histogram(bins = 30, fill = "lightblue", color = "black") +
+  scale_x_continuous(labels = scales::label_comma()) +
+  labs(title = "Household Income", x = "Income", y = "Count")
+```
+
+```{r number_pets_hist}
+summary(customer_data$`umber Pets`)
+ggplot(customer_data, aes(x = `Number Pets`)) +
+  geom_histogram(bins = 30, fill = "lightblue", color = "black") +
+  labs(title = "Number Pets", x = "Pets", y = "Count")
+```
+
+```{r home_owner_boxplot}
+summary(customer_data$`Home Owner`)
+ggplot(customer_data, aes(x = factor(`Home Owner`))) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 3) +
+  labs(title = "Home Owner (0/1)", x = "Home Owner", y = "Count")
+```
+
+```{r car_value_hist}
+summary(customer_data$`Car Value`)
+ggplot(customer_data, aes(x = `Car Value`)) +
+  geom_histogram(bins = 30, fill = "lightblue", color = "black") +
+  labs(title = "Car Value", x = "Car Value", y = "Count")
+```
+
+```{r commute_distance_hist}
+summary(customer_data$`Commute Distance`)
+ggplot(customer_data, aes(x = `Commute Distance`)) +
+  geom_histogram(binwidth = 5, fill = "lightblue", color = "black", boundary = 0) +
+  geom_text(
+    stat = "bin",
+    binwidth = 5,
+    aes(label = after_stat(count)),
+    vjust = -0.3,
+    size = 3
+  ) +
+  labs(title = "Commute Distance", x = "Distance", y = "Count")
+```
+
+```{r credit_card_tenure_hist}
+summary(customer_data$`Credit Card Tenure`)
+ggplot(customer_data, aes(x = `Credit Card Tenure`)) +
+  geom_histogram(binwidth = 5, fill = "lightblue", color = "black", boundary = 0) +
+  geom_text(
+    stat = "bin",
+    binwidth = 5,
+    aes(label = after_stat(count)),
+    vjust = -0.3,
+    size = 3
+  ) +
+  labs(title = "Credit Card Tenure", x = "Tenure", y = "Count")
+```
+
+```{r tv_hours_hist}
+summary(customer_data$`TV Watching Hours`)
+ggplot(customer_data, aes(x = `TV Watching Hours`)) +
+  geom_histogram(binwidth = 5, fill = "lightblue", color = "black", boundary = 0) +
+  geom_text(
+    stat = "bin",
+    binwidth = 5,
+    aes(label = after_stat(count)),
+    vjust = -0.3,
+    size = 3
+  ) +
+  labs(title = "TV Watching Hours", x = "Hours", y = "Count")
+```
+
+```{r coupon_redemption_boxplot}
+summary(customer_data$`Coupon Redemption`)
+ggplot(customer_data, aes(x = factor(`Coupon Redemption`))) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 3) +
+  labs(title = "Coupon Redemption (0/1)", x = "Coupon Redemption", y = "Count")
+```
+
+```{r brand_tenure_hist}
+summary(customer_data$`Brand Tenure Months`)
+ggplot(customer_data, aes(x = `Brand Tenure Months`)) +
+  geom_histogram(bins = 30, fill = "lightblue", color = "black") +
+  labs(title = "Brand Tenure Months", x = "Months", y = "Count")
+```
+
+```{r monthly_a_hist}
+summary(customer_data$`Monthly Spend ProductA`)
+ggplot(customer_data, aes(x = `Monthly Spend ProductA`)) +
+  geom_histogram(bins = 30, fill = "lightblue", color = "black") +
+  labs(title = "Monthly Spend ProductA", x = "Spend", y = "Count")
+```
+
+```{r cumulative_a_hist}
+summary(customer_data$`Cumulative Spend ProductA`)
+ggplot(customer_data, aes(x = `Cumulative Spend ProductA`)) +
+  geom_histogram(bins = 30, fill = "lightblue", color = "black") +
+  labs(title = "Cumulative Spend ProductA", x = "Spend", y = "Count")
+```
+
+```{r monthly_b_hist}
+summary(customer_data$`Monthly Spend ProductB`)
+ggplot(customer_data, aes(x = `Monthly Spend ProductB`)) +
+  geom_histogram(bins = 30, fill = "lightblue", color = "black") +
+  labs(title = "Monthly Spend ProductB", x = "Spend", y = "Count")
+```
+
+```{r cumulative_b_hist}
+summary(customer_data$`Cumulative Spend ProductB`)
+ggplot(customer_data, aes(x = `Cumulative Spend ProductB`)) +
+  geom_histogram(bins = 30, fill = "lightblue", color = "black") +
+  labs(title = "Cumulative Spend ProductB", x = "Spend", y = "Count")
+```
+
+```{r monthly_c_hist}
+summary(customer_data$`Monthly Spend ProductC`)
+ggplot(customer_data, aes(x = `Monthly Spend ProductC`)) +
+  geom_histogram(bins = 30, fill = "lightblue", color = "black") +
+  labs(title = "Monthly Spend ProductC", x = "Spend", y = "Count")
+```
+
+```{r cumulative_c_hist}
+summary(customer_data$`Cumulative Spend ProductC`)
+ggplot(customer_data, aes(x = `Cumulative Spend ProductC`)) +
+  geom_histogram(bins = 30, fill = "lightblue", color = "black") +
+  labs(title = "Cumulative Spend ProductC", x = "Spend", y = "Count")
+```
+
+```{r total_avg_monthly_hist}
+summary(customer_data$`Total Avg Monthly Spend`)
+ggplot(customer_data, aes(x = `Total Avg Monthly Spend`)) +
+  geom_histogram(bins = 30, fill = "lightblue", color = "black") +
+  labs(title = "Total Avg Monthly Spend", x = "Spend", y = "Count")
+```
+
+```{r high_value_customer_boxplot}
+summary(customer_data$`High Value Customer`)
+ggplot(customer_data, aes(x = factor(`High Value Customer`))) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 3) +
+  labs(title = "High Value Customer (0/1)", x = "High Value Customer", y = "Count")
+```
+
+```{r gender_summary}
+summary(customer_data$Gender)
+ggplot(customer_data, aes(x = Gender)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 3) +
+  labs(title = "Gender Frequency Count", x = "Gender", y = "Count")
+```
+
+```{r job_category_summary}
+summary(customer_data$`Job Category`)
+ggplot(customer_data, aes(x = `Job Category`)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 3) +
+  labs(title = "Job Category Frequency Count", x = "Job Category", y = "Count")
+```
+
+```{r marital_status_summary}
+summary(customer_data$`Marital Status`)
+ggplot(customer_data, aes(x = `Marital Status`)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 3) +
+  labs(title = "Marital Status Frequency Count", x = "Marital Status", y = "Count")
+```
+
+```{r car_ownership_summary}
+summary(customer_data$`Car Ownership`)
+ggplot(customer_data, aes(x = `Car Ownership`)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 3) +
+  labs(title = "Car Ownership Frequency Count", x = "Car Ownership", y = "Count")
+```
+
+```{r car_brand_summary}
+summary(customer_data$`Car Brand`)
+ggplot(customer_data, aes(x = `Car Brand`)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 3) +
+  labs(title = "Car Brand Frequency Count", x = "Car Brand", y = "Count")
+```
+
+```{r political_party_summary}
+summary(customer_data$`Political Party`)
+ggplot(customer_data, aes(x = `Political Party`)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 3) +
+  labs(title = "Political Party Frequency Count", x = "Political Party", y = "Count")
+```
+
+```{r votes_summary}
+summary(customer_data$Votes)
+ggplot(customer_data, aes(x = Votes)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 3) +
+  labs(title = "Votes Frequency Count", x = "Votes", y = "Count")
+```
+
+```{r active_lifestyle_summary}
+summary(customer_data$`Active Lifestyle`)
+ggplot(customer_data, aes(x = `Active Lifestyle`)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 3) +
+  labs(title = "Active Lifestyle Frequency Count", x = "Active Lifestyle", y = "Count")
+```
+
+```{r streaming_summary}
+summary(customer_data$`Streaming Svcs`)
+ggplot(customer_data, aes(x = `Streaming Svcs`)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 3) +
+  labs(title = "Streaming Services Frequency Count", x = "Streaming Services", y = "Count")
+```
+
+```{r wireless_summary}
+summary(customer_data$`Wireless Internet`)
+ggplot(customer_data, aes(x = `Wireless Internet`)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 3) +
+  labs(title = "Wireless Internet Frequency Count", x = "Wireless Internet", y = "Count")
+```
+
+```{r smartphone_summary}
+summary(customer_data$`Smart Phone`)
+ggplot(customer_data, aes(x = `Smart Phone`)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 3) +
+  labs(title = "Smart Phone Frequency Count", x = "Smart Phone", y = "Count")
+```
+
+```{r twitter_summary}
+summary(customer_data$`Twitter Acct`)
+ggplot(customer_data, aes(x = `Twitter Acct`)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 3) +
+  labs(title = "Twitter Account Frequency Count", x = "Twitter Account", y = "Count")
+```
+
+```{r linkedin_summary}
+summary(customer_data$`LinkedIn Acct`)
+ggplot(customer_data, aes(x = `LinkedIn Acct`)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 3) +
+  labs(title = "LinkedIn Account Frequency Count", x = "LinkedIn Account", y = "Count")
+```
+
+```{r facebook_summary}
+summary(customer_data$`Facebook Acct`)
+ggplot(customer_data, aes(x = `Facebook Acct`)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 3) +
+  labs(title = "Facebook Account Frequency Count", x = "Facebook Account", y = "Count")
+```
+
+```{r news_subscriber_summary}
+summary(customer_data$`News Subscriber`)
+ggplot(customer_data, aes(x = `News Subscriber`)) +
+  geom_bar(fill = "lightblue", color = "black") +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.3, size = 3) +
+  labs(title = "News Subscriber Frequency Count", x = "News Subscriber", y = "Count")
+```
+
+```{r simple_correlation_numeric}
+num_data <- customer_data[sapply(customer_data, is.numeric)]
+corr_mat <- round(cor(num_data, use = "pairwise.complete.obs"), 3)
+corr_mat
+
+# Reorder variables by similarity
+ord <- hclust(as.dist(1 - abs(corr_mat)))$order
+corr_ord <- corr_mat[ord, ord]
+
+# Keep only lower triangle
+corr_ord[upper.tri(corr_ord)] <- NA
+corr_df <- as.data.frame(as.table(corr_ord))
+corr_df <- na.omit(corr_df)
+
+p <- ggplot(corr_df, aes(x = Var1, y = Var2, fill = Freq)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = sprintf("%.2f", Freq)), size = 2.7) +
+  scale_fill_gradient2(
+    low = "#2166ac",
+    mid = "white",
+    high = "#b2182b",
+    midpoint = 0,
+    limits = c(-1, 1)
+  ) +
+  coord_equal() +
+  labs(title = "Correlation Heatmap (Ordered, Lower Triangle)", x = "", y = "", fill = "Corr") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank()
+  )
+
+p
+```
+
+```{r correlation_matrix_like_2_7}
+# Correlation matrix using classic heatmap style (not ggplot)
+simple_corr <- round(cor(num_data, use = "pairwise.complete.obs"), 4)
+simple_corr
+
+heatmap(
+  simple_corr,
+  Rowv = NA,
+  Colv = NA,
+  scale = "none",
+  col = colorRampPalette(c("blue", "white", "red"))(100),
+  margins = c(10, 10),
+  main = "Correlation Matrix Heatmap"
+)
+```
+
+```{r top_correlations_with_total_avg_monthly_spend}
+# Top correlations with target variable for linear regression selection
+target_var <- "Total Avg Monthly Spend"
+
+target_corr <- cor(num_data, use = "pairwise.complete.obs")[, target_var]
+target_corr <- target_corr[names(target_corr) != target_var]
+
+top_corr <- data.frame(
+  variable = names(target_corr),
+  correlation = as.numeric(target_corr),
+  abs_correlation = abs(as.numeric(target_corr))
+)
+
+top_corr <- top_corr[order(-top_corr$abs_correlation), ]
+head(top_corr, 10)
+```

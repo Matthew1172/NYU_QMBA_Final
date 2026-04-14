@@ -17,3 +17,33 @@ Employment and education years cannot be negative.
 Income must be greater than or equal to 0
 Use consistent capitalization
 No leading/ trailing spaces
+
+Masking technique (boolean masks)
+-------------------------------
+When validating rows we build a boolean mask (`invalid_mask`) that marks rows failing any check. We accumulate failing conditions with the in-place-or operator `|=` which sets a row to True when any condition is met. After all checks are combined, we use the bitwise NOT operator `~` to invert the mask and select the valid rows.
+
+Example:
+
+```python
+# start with all False (all rows valid)
+invalid_mask = pd.Series(False, index=df.index)
+
+# mark rows with missing critical fields as invalid
+# use operator |= to accumulate all rows which fail this condition
+invalid_mask |= df[['Age','Household_Income']].isna().any(axis=1)
+
+# mark rows where cumulative < monthly as invalid
+invalid_mask |= df['Cumulative_Spend_ProductA'] < df['Monthly_Spend_ProductA']
+
+# invalid_df contains rows that failed any check
+invalid_df = df[invalid_mask]
+
+# cleaned_df contains the rows that passed all checks
+cleaned_df = df[~invalid_mask]
+```
+
+Notes:
+- `|=` accumulates (ORs) boolean conditions into the mask without overwriting prior checks.
+- `~` inverts the boolean Series so it can be used to select rows that are not invalid.
+- This approach keeps the validation logic declarative and makes it easy to save `invalid_df` and `cleaned_df` separately.
+
