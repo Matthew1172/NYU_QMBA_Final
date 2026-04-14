@@ -344,7 +344,8 @@ corr_mat <- round(cor(num_data, use = "pairwise.complete.obs"), 3)
 corr_mat
 ```
 
-```{r simple_correlation_circles_heatmap}
+```{r simple_correlation_circles_heatmap, fig.width=10, fig.height=8}
+# Larger figure and adjusted text sizes to reduce crowding
 corrplot(
   corr_mat,
   method = "circle",
@@ -352,10 +353,12 @@ corrplot(
   order = "hclust",
   tl.col = "black",
   tl.srt = 45,
-  addCoef.col = "black",
-  number.cex = 0.5,
+  tl.cex = 0.8,       # label text size
+  cl.cex = 0.9,       # color legend text size
+  number.cex = 0.6,   # coefficient text size (if shown)
+  addCoef.col = NULL, # hide numeric coefficients to avoid overlap
   col = colorRampPalette(c("#2166ac", "white", "#b2182b"))(200),
-  mar = c(0, 0, 1, 0),
+  mar = c(0, 0, 2, 0), # a bit more top margin for the title
   title = "Simple Correlation Plot"
 )
 ```
