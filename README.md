@@ -55,3 +55,8 @@ Notes and caveats:
 - For readability and maintainability prefer a small helper (e.g. `mark(cond, reason)`) that abstracts the `|=` and `.loc[cond].apply(...)` steps — this is the pattern used in `dataclean.ipynb`.
 - Finally, joining the list into a string (e.g. `'; '.join(...)`) makes the reasons easy to inspect in CSVs or reports.
 
+
+# Questions about our customer base
+
+do big household have a lot of pets?
+do high income households prefer amex?

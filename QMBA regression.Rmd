@@ -1,0 +1,262 @@
+---
+title: "Final_QMBA_Project"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+date: "2026-04-13"
+---
+
+```{r setup}
+knitr::opts_chunk$set(echo = FALSE)
+library(readxl)
+library(ggplot2)
+library(corrplot)
+library(car)
+customer_data <- read_excel("./outputs/26-04-14-16/customer_data_cleaned.xlsx")
+
+# Convert columns that should be numeric but may be stored as text
+numeric_cols <- c(
+  "Region", "Age", "Education Years", "Employment Years", "Household Size",
+  "Household Income", "Number Pets", "umber Pets", "Home Owner", "Car Value",
+  "Commute Distance", "Credit Card Tenure", "TV Watching Hours",
+  "Coupon Redemption", "Brand Tenure Months", "Monthly Spend ProductA",
+  "Cumulative Spend ProductA", "Monthly Spend ProductB", "Cumulative Spend ProductB",
+  "Monthly Spend ProductC", "Cumulative Spend ProductC", "Total Avg Monthly Spend",
+  "High Value Customer"
+)
+
+numeric_cols <- intersect(numeric_cols, names(customer_data))
+
+safe_numeric <- function(x) {
+  as.numeric(gsub("[^0-9.-]", "", as.character(x)))
+}
+
+customer_data[numeric_cols] <- lapply(customer_data[numeric_cols], safe_numeric)
+theme_set(theme_minimal(base_size = 12))
+```
+
+```{r overall_data_check}
+head(customer_data)
+str(customer_data)
+summary(customer_data)
+sum(is.na(customer_data))
+```
+
+```{r simple_correlation_numeric}
+num_data <- customer_data[sapply(customer_data, is.numeric)]
+corr_mat <- round(cor(num_data, use = "pairwise.complete.obs"), 3)
+corr_mat
+```
+
+```{r simple_correlation_circles_heatmap, fig.width=10, fig.height=8}
+# Larger figure and adjusted text sizes to reduce crowding
+corrplot(
+  corr_mat,
+  method = "circle",
+  type = "lower",
+  order = "hclust",
+  tl.col = "black",
+  tl.srt = 45,
+  tl.cex = 0.8,       # label text size
+  cl.cex = 0.9,       # color legend text size
+  number.cex = 0.6,   # coefficient text size (if shown)
+  addCoef.col = NULL, # hide numeric coefficients to avoid overlap
+  col = colorRampPalette(c("#2166ac", "white", "#b2182b"))(200),
+  mar = c(0, 0, 2, 0), # a bit more top margin for the title
+  title = "Simple Correlation Plot"
+)
+```
+
+```{r top_correlations_with_total_avg_monthly_spend}
+# Top correlations with target variable for linear regression selection
+target_var <- "Total Avg Monthly Spend"
+
+target_corr <- cor(num_data, use = "pairwise.complete.obs")[, target_var]
+target_corr <- target_corr[names(target_corr) != target_var]
+
+top_corr <- data.frame(
+  variable = names(target_corr),
+  correlation = as.numeric(target_corr),
+  abs_correlation = abs(as.numeric(target_corr))
+)
+
+top_corr <- top_corr[order(-top_corr$abs_correlation), ]
+head(top_corr, 10)
+```
+
+```{r logistic_regression_auto, echo=TRUE}
+# Automatic predictor filtering and logistic regression
+
+# In R formulas, spaces cause problems, so this function wraps those names in backticks:
+safe_name <- function(x) {
+  if (grepl("^[A-Za-z0-9_.]+$", x)) x else paste0("`", x, "`")
+}
+
+#Here are the columns I want (Independent Vars)
+model_vars <- c(
+  "High Value Customer",
+  "Total Avg Monthly Spend",
+  "Household Income",
+  "Age",
+  "Household Size",
+  "Home Owner",
+  "Credit Card Tenure",
+  "Brand Tenure Months",
+  "Coupon Redemption",
+  "Streaming Svcs",
+  "Smart Phone"
+)
+# Copy rows into new smaller dataframe
+mod_data <- customer_data[ , model_vars]
+
+# 3) Perfect separation checks
+# This is one of the most important parts.
+# 
+# What is perfect separation?
+# 
+# It means one predictor can almost perfectly split the outcome.
+# 
+# Example:
+# 
+# everyone with X > 100 is a high-value customer
+# everyone with X <= 100 is not
+# 
+# That sounds great, but in logistic regression it actually causes problems:
+# 
+# coefficients blow up
+# model becomes unstable
+# standard errors get weird
+# 
+# So the code searches for variables that separate 0s and 1s too perfectly, then drops them.
+# 
+# That’s why your output said:
+# 
+# Dropping perfect/separating vars: Total Avg Monthly Spend
+# 
+# That means this variable was almost too good at identifying the outcome.
+sep_vars <- character()
+for (nm in setdiff(names(mod_data), "High Value Customer")){
+  x <- mod_data[[nm]]
+  if (is.numeric(x)){
+    a0 <- x[mod_data$`High Value Customer`==0]
+    a1 <- x[mod_data$`High Value Customer`==1]
+    if (length(na.omit(a0))>0 && length(na.omit(a1))>0){
+      if (max(a0, na.rm=TRUE) < min(a1, na.rm=TRUE) || max(a1, na.rm=TRUE) < min(a0, na.rm=TRUE)){
+        sep_vars <- c(sep_vars, nm)
+      }
+    }
+  } else {
+    tbl <- table(x, mod_data$`High Value Customer`)
+    if (nrow(tbl)>0 && any(apply(tbl,1,function(r) r[1]==0 || r[2]==0))) sep_vars <- c(sep_vars, nm)
+  }
+}
+if (length(sep_vars)>0){ cat("Dropping perfect/separating vars:", paste(unique(sep_vars), collapse=", "), "\n"); mod_data <- mod_data[ , !(names(mod_data) %in% sep_vars), drop=FALSE] }
+
+# 4) High pairwise correlation among numerics (>0.9): drop the lower-variance member
+# This checks for multicollinearity.
+# 
+# That means:
+# 
+# two predictors are telling almost the same story
+# 
+# Example:
+# 
+# Credit Card Tenure and Brand Tenure Months might move together a lot
+# 
+# If two variables correlate above 0.9, the code drops one of them.
+# Because highly correlated predictors can:
+# 
+# make coefficients unstable
+# inflate standard errors
+# make interpretation messy
+# 
+# The code keeps the one with higher variance and drops the other.
+# 
+# That’s why your output said:
+# 
+# Dropping highly correlated numeric vars: Credit Card Tenure
+num_idx <- sapply(mod_data, is.numeric)
+num_idx["High Value Customer"] <- FALSE
+num_names <- names(mod_data)[num_idx]
+if (length(num_names)>1){
+  cor_mat <- cor(mod_data[ , num_names], use="pairwise.complete.obs")
+  high_pairs <- which(abs(cor_mat) > 0.9 & abs(cor_mat) < 1, arr.ind=TRUE)
+  drop_cols <- character()
+  if (nrow(high_pairs)>0){
+    for (i in seq_len(nrow(high_pairs))){
+      a <- rownames(cor_mat)[high_pairs[i,1]]
+      b <- colnames(cor_mat)[high_pairs[i,2]]
+      var_a <- var(mod_data[[a]], na.rm=TRUE); var_b <- var(mod_data[[b]], na.rm=TRUE)
+      drop_cols <- c(drop_cols, ifelse(var_a < var_b, a, b))
+    }
+    drop_cols <- unique(drop_cols)
+    cat("Dropping highly correlated numeric vars:", paste(drop_cols, collapse=", "), "\n")
+    mod_data <- mod_data[ , !(names(mod_data) %in% drop_cols), drop=FALSE]
+  }
+}
+
+# 5) Iterative VIF-based removal if possible (silent if car not installed)
+# This part tries to calculate VIF = Variance Inflation Factor.
+# 
+# VIF tells you whether a variable is too predictable from the other predictors.
+# 
+# Rule of thumb:
+# 
+# VIF > 10 = bad multicollinearity
+# 
+# If that happens,drops those variables too
+if (ncol(mod_data) > 2){
+  pred_names <- setdiff(names(mod_data), "High Value Customer")
+  fterms <- paste(vapply(pred_names, safe_name, character(1)), collapse = " + ")
+  f <- as.formula(paste(safe_name("High Value Customer"), "~", fterms))
+  mm <- model.matrix(f, data = mod_data)
+  mm <- mm[, colnames(mm)!="(Intercept)", drop=FALSE]
+  vif_vals <- sapply(seq_len(ncol(mm)), function(i){
+    r <- summary(lm(mm[,i] ~ mm[,-i]))$r.squared
+    if (is.na(r)) NA else 1/(1-r)
+  })
+  names(vif_vals) <- colnames(mm)
+  high_vif <- names(vif_vals)[which(vif_vals>10)]
+  if (length(high_vif)>0){
+    orig_drop <- unique(sub("^(.*?)[:].*$", "\\1", high_vif))
+    cat("Dropping high-VIF variables (>",10,"):", paste(orig_drop, collapse=", "), "\n")
+    mod_data <- mod_data[ , !(names(mod_data) %in% orig_drop), drop=FALSE]
+  }
+}
+
+# Final model fit
+terms <- setdiff(names(mod_data), "High Value Customer")
+if (length(terms)==0) stop('No predictors remain after automatic filtering.')
+terms_safe <- vapply(terms, safe_name, character(1))
+formula_terms <- paste(terms_safe, collapse = " + ")
+logit_formula <- as.formula(paste(safe_name("High Value Customer"), "~", formula_terms))
+logit_model <- glm(logit_formula, data = mod_data, family = binomial(), na.action = na.omit)
+
+summary(logit_model)
+# In logistic regression, coefficients are in log-odds, which are hard to interpret.
+# 
+# So this converts them to odds ratios, which are easier.
+# 
+# Example:
+# 
+# coefficient = 1.077
+# odds ratio = exp(1.077) ≈ 2.94
+# Smart Phone → Odds Ratio ≈ 2.94
+# 
+# People with smartphones are about 2.94 times more likely to be high-value customers
+# Odds Ratio = 2.94  
+# CI = [2.10, 4.10]
+# 
+# We are 95% (confint R func convention) confident the true odds ratio is between 2.10 and 4.10
+odds <- exp(coef(logit_model))
+ci <- tryCatch(exp(confint(logit_model)), error = function(e) matrix(NA, nrow=length(odds), ncol=2))
+odds_table <- data.frame(Estimate = coef(logit_model), OddsRatio = odds, CI_low = ci[,1], CI_high = ci[,2])
+print(odds_table)
+null_dev <- logit_model$null.deviance
+resid_dev <- logit_model$deviance
+pseudo_r2 <- 1 - resid_dev/null_dev
+cat("Pseudo R-squared:", round(pseudo_r2, 4), "\n")
+cat("Observations used:", length(logit_model$fitted.values), "\n")
+
+```
