@@ -13,7 +13,7 @@ library(readxl)
 library(ggplot2)
 library(corrplot)
 library(car)
-customer_data <- read_excel("./outputs/26-04-14-16/customer_data_cleaned.xlsx")
+customer_data <- read_excel("./outputs/26-04-16-20/customer_data_cleaned.xlsx")
 
 # Convert columns that should be numeric but may be stored as text
 numeric_cols <- c(

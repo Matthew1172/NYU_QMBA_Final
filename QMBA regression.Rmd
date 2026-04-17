@@ -13,7 +13,7 @@ library(readxl)
 library(ggplot2)
 library(corrplot)
 library(car)
-customer_data <- read_excel("./outputs/26-04-14-16/customer_data_cleaned.xlsx")
+customer_data <- read_excel("./outputs/26-04-16-20/customer_data_cleaned.xlsx")
 
 # Convert columns that should be numeric but may be stored as text
 numeric_cols <- c(
@@ -105,7 +105,8 @@ model_vars <- c(
   "Brand Tenure Months",
   "Coupon Redemption",
   "Streaming Svcs",
-  "Smart Phone"
+  "Smart Phone",
+  "Wireless Internet"
 )
 # Copy rows into new smaller dataframe
 mod_data <- customer_data[ , model_vars]
@@ -196,34 +197,6 @@ if (length(num_names)>1){
   }
 }
 
-# 5) Iterative VIF-based removal if possible (silent if car not installed)
-# This part tries to calculate VIF = Variance Inflation Factor.
-# 
-# VIF tells you whether a variable is too predictable from the other predictors.
-# 
-# Rule of thumb:
-# 
-# VIF > 10 = bad multicollinearity
-# 
-# If that happens,drops those variables too
-if (ncol(mod_data) > 2){
-  pred_names <- setdiff(names(mod_data), "High Value Customer")
-  fterms <- paste(vapply(pred_names, safe_name, character(1)), collapse = " + ")
-  f <- as.formula(paste(safe_name("High Value Customer"), "~", fterms))
-  mm <- model.matrix(f, data = mod_data)
-  mm <- mm[, colnames(mm)!="(Intercept)", drop=FALSE]
-  vif_vals <- sapply(seq_len(ncol(mm)), function(i){
-    r <- summary(lm(mm[,i] ~ mm[,-i]))$r.squared
-    if (is.na(r)) NA else 1/(1-r)
-  })
-  names(vif_vals) <- colnames(mm)
-  high_vif <- names(vif_vals)[which(vif_vals>10)]
-  if (length(high_vif)>0){
-    orig_drop <- unique(sub("^(.*?)[:].*$", "\\1", high_vif))
-    cat("Dropping high-VIF variables (>",10,"):", paste(orig_drop, collapse=", "), "\n")
-    mod_data <- mod_data[ , !(names(mod_data) %in% orig_drop), drop=FALSE]
-  }
-}
 
 # Final model fit
 terms <- setdiff(names(mod_data), "High Value Customer")
