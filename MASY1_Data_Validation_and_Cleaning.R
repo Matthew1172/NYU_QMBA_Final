@@ -4,24 +4,13 @@
 
 library(readxl)
 library(dplyr)
+library(tidyverse)
 
-data <- read_excel("~/Desktop/MASY1-GC 1015/Revised Project Customer Dataset 1.xlsx")
+data <- read_excel("./Revised Project Customer Dataset 1.xlsx")
 
 # Quick check
 head(data)
 str(data)
-
-
-
-
-
-
-
-
-
-
-
-
 
 # ============================
 # 1. VALIDATION CHECKS (ORIGINAL DATA)
