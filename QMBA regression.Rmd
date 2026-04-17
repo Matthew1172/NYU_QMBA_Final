@@ -233,3 +233,21 @@ cat("Pseudo R-squared:", round(pseudo_r2, 4), "\n")
 cat("Observations used:", length(logit_model$fitted.values), "\n")
 
 ```
+
+
+LINEAR REGRESSION STEPWISE; 
+
+```{r}
+# Full linear model
+model_full <- lm(
+  `Total Avg Monthly Spend` ~ . - CustomerID,
+  data = customer_data
+)
+
+# Backward stepwise using AIC
+model_step <- step(model_full, direction = "backward")
+
+# Final selected model
+summary(model_step)
+```
+Stepwise regression uses AIC to determine which variables should be included in the final model. Due to it being a linear regression backwards stepwise it begins will all variables and one at a time removes the variable with the highest AIC. Therefore it keeps remvoing and adding to get the lowest AIC possible, which explaoins the best model between goodness of dit and model complexity. 
