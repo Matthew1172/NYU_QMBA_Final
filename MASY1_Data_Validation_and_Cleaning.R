@@ -11,6 +11,18 @@ data <- read_excel("~/Desktop/MASY1-GC 1015/Revised Project Customer Dataset 1.x
 head(data)
 str(data)
 
+
+
+
+
+
+
+
+
+
+
+
+
 # ============================
 # 1. VALIDATION CHECKS (ORIGINAL DATA)
 # ============================
