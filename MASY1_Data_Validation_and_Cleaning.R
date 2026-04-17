@@ -4,7 +4,7 @@
 
 library(readxl)
 library(dplyr)
-library(tidyverse)
+
 
 data <- read_excel("./Revised Project Customer Dataset 1.xlsx")
 
