@@ -7,7 +7,7 @@ library(ggplot2)
 # 1. LOAD THE DATA
 # ------------------------------------------------------------
 
-customer_data <- read_excel("./outputs/26-04-16-20/customer_data_cleaned.xlsx")
+customer_data <- read_excel("./outputs/26-04-16-21/customer_data_cleaned.xlsx")
 
 # Convert columns that should be numeric but may be stored as text
 numeric_cols <- c(
