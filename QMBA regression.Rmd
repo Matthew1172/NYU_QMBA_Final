@@ -95,18 +95,19 @@ safe_name <- function(x) {
 
 #Here are the columns I want (Independent Vars)
 model_vars <- c(
-  "High Value Customer",
-  "Total Avg Monthly Spend",
-  "Household Income",
-  "Age",
-  "Household Size",
-  "Home Owner",
-  "Credit Card Tenure",
-  "Brand Tenure Months",
-  "Coupon Redemption",
-  "Streaming Svcs",
-  "Smart Phone",
-  "Wireless Internet"
+'CustomerID', 'Region', 'Gender', 'Age', 'Education Years',
+       'Employment Years', 'Job Category', 'Retired', 'Marital Status',
+       'Household Size', 'Household Income', 'Number Pets', 'Home Owner',
+       'Car Ownership', 'Car Brand', 'Car Value', 'Commute Distance',
+       'Political Party', 'Votes', 'Credit Card', 'Credit Card Tenure',
+       'Active Lifestyle', 'TV Watching Hours', 'Streaming Svcs',
+       'Wireless Internet', 'Smart Phone', 'Twitter Acct', 'LinkedIn Acct',
+       'Facebook Acct', 'News Subscriber', 'Coupon Redemption',
+       'Brand Tenure Months', 'Monthly Spend ProductA',
+       'Cumulative Spend ProductA', 'Monthly Spend ProductB',
+       'Cumulative Spend ProductB', 'Monthly Spend ProductC',
+       'Cumulative Spend ProductC', 'Total Avg Monthly Spend',
+       'High Value Customer'
 )
 # Copy rows into new smaller dataframe
 mod_data <- customer_data[ , model_vars]
@@ -206,6 +207,20 @@ formula_terms <- paste(terms_safe, collapse = " + ")
 logit_formula <- as.formula(paste(safe_name("High Value Customer"), "~", formula_terms))
 logit_model <- glm(logit_formula, data = mod_data, family = binomial(), na.action = na.omit)
 
+# Stepwise selection
+
+# Full model (what you already built)
+full_model <- logit_model
+
+# Null model (IMPORTANT: use SAME DATA)
+null_model <- glm(`High Value Customer` ~ 1, data = mod_data, family = binomial)
+
+# Stepwise
+step_model <- step(
+  full_model,
+  direction = "both"
+)
+
 summary(logit_model)
 # In logistic regression, coefficients are in log-odds, which are hard to interpret.
 # 
@@ -222,14 +237,68 @@ summary(logit_model)
 # CI = [2.10, 4.10]
 # 
 # We are 95% (confint R func convention) confident the true odds ratio is between 2.10 and 4.10
-odds <- exp(coef(logit_model))
-ci <- tryCatch(exp(confint(logit_model)), error = function(e) matrix(NA, nrow=length(odds), ncol=2))
-odds_table <- data.frame(Estimate = coef(logit_model), OddsRatio = odds, CI_low = ci[,1], CI_high = ci[,2])
-print(odds_table)
-null_dev <- logit_model$null.deviance
-resid_dev <- logit_model$deviance
-pseudo_r2 <- 1 - resid_dev/null_dev
-cat("Pseudo R-squared:", round(pseudo_r2, 4), "\n")
-cat("Observations used:", length(logit_model$fitted.values), "\n")
+odds <- exp(coef(step_model))
 
+ci <- tryCatch(
+  {
+    tmp <- exp(confint(step_model))
+    if (is.null(dim(tmp))) matrix(tmp, ncol = 2) else tmp
+  },
+  error = function(e) matrix(NA, nrow = length(odds), ncol = 2)
+)
+
+odds_table <- data.frame(
+  Estimate = coef(step_model),
+  OddsRatio = odds,
+  CI_low = ci[,1],
+  CI_high = ci[,2]
+)
+
+print(odds_table)
+
+pseudo_r2 <- 1 - step_model$deviance / step_model$null.deviance
+
+cat("Pseudo R-squared:", round(pseudo_r2, 4), "\n")
+cat("Observations used:", length(step_model$fitted.values), "\n")
+```
+
+
+```{r}
+final_model <- glm(
+  `High Value Customer` ~ 
+    `Streaming Svcs` +
+    `Facebook Acct` +
+    `Wireless Internet`,
+  data = mod_data,
+  family = binomial
+)
+summary(final_model)
+odds <- exp(coef(final_model))
+
+# Extract deviances
+null_dev <- final_model$null.deviance
+resid_dev <- final_model$deviance
+
+# Degrees of freedom
+df_null <- final_model$df.null
+df_resid <- final_model$df.residual
+df_diff <- df_null - df_resid
+
+# Likelihood Ratio Test (Chi-square)
+chi_sq <- null_dev - resid_dev
+
+# p-value
+p_value <- pchisq(chi_sq, df = df_diff, lower.tail = FALSE)
+
+# McFadden's R^2
+pseudo_r2 <- 1 - (resid_dev / null_dev)
+
+# Print results
+cat("Likelihood Ratio Test (Chi-square):\n")
+cat("Chi-square =", round(chi_sq, 4), "\n")
+cat("Degrees of freedom =", df_diff, "\n")
+cat("p-value =", round(p_value, 6), "\n\n")
+
+cat("McFadden's R-squared:\n")
+cat("Pseudo R^2 =", round(pseudo_r2, 6), "\n")
 ```
