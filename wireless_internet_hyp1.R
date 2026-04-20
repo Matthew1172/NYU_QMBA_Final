@@ -98,7 +98,7 @@ s0  <- group_summary$sd_spend[group_summary$wireless_num == 0]
 
 # Standard error for difference in means
 SE <- sqrt((s1^2 / n1) + (s0^2 / n0))
-
+# Check whether a z test is appropriate here, since we do not know the population variance for either group.
 # z statistic
 z_calc <- (x1 - x0) / SE
 
