@@ -1,0 +1,74 @@
+---
+title: "Other Bivariate associations"
+output: html_document
+date: "2026-04-20"
+---
+```{r}
+library(dplyr)
+library(tidyverse)
+library(readxl)
+library(ggplot2)
+library(corrplot)
+library(car)
+customer_data <- read_excel("~/Desktop/legitfinal.xlsx")
+numeric_cols <- c(
+  "Region", "Age", "Education Years", "Household Size",
+  "Household Income", "Number Pets", "umber Pets", "Home Owner", "Car Value",
+  "Commute Distance", "Credit Card Tenure", "TV Watching Hours",
+  "Coupon Redemption", "Brand Tenure Months", "Monthly Spend ProductA",
+  "Cumulative Spend ProductA", "Monthly Spend ProductB", "Cumulative Spend ProductB",
+  "Monthly Spend ProductC", "Cumulative Spend ProductC", "Total Avg Monthly Spend",
+  "High Value Customer"
+)
+
+numeric_cols <- intersect(numeric_cols, names(customer_data))
+
+safe_numeric <- function(x) {
+  as.numeric(gsub("[^0-9.-]", "", as.character(x)))
+}
+```
+
+```{r}
+library(ggplot2)
+#Age vs household Bivariate Test and pvalue
+cort <- cor.test(
+  customer_data$`Household Income`,
+  customer_data$`Age`,
+  use = "complete.obs"
+)
+
+r_val <- round(unname(cort$estimate), 3)
+p_val <- signif(cort$p.value, 3)
+
+ggplot(customer_data, aes(x = `Age`, y = `Household Income`)) +
+  geom_point(alpha = 0.5, color = "pink") +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  labs(
+    title = "Age vs Household Income",
+    subtitle = paste0("Correlation = ", r_val, " | p-value = ", p_val),
+    x = "Age",
+    y = "Household Income"
+  ) + scale_y_continuous(labels = function(x) paste0(round(x / 1000), "K"))+
+  theme_minimal()
+
+
+#Total Avg Monthly spend vs Job Category
+ job_anova <- aov(`Total Avg Monthly Spend` ~ `Job Category`, data = customer_data)
+job_pval <- summary(job_anova)[[1]][["Pr(>F)"]][1]
+
+# Plot
+
+ggplot(customer_data, 
+       aes(x = reorder(`Job Category`, `Total Avg Monthly Spend`, FUN = mean),
+           y = `Total Avg Monthly Spend`)) +
+  stat_summary(fun = mean, geom = "col", fill = "lightblue") +
+  labs(
+    title = "Average Monthly Spend by Job Category",
+    subtitle = paste0("ANOVA p-value = ", signif(job_pval, 4)),
+    x = "Job Category",
+    y = "Mean Total Avg Monthly Spend"
+  ) +  coord_cartesian(ylim = c(500, 900)) +
+  scale_y_continuous(breaks = seq(500, 1000, by = 50)) +
+  theme_minimal()
+
+```
