@@ -71,4 +71,7 @@ ggplot(customer_data,
   scale_y_continuous(breaks = seq(500, 1000, by = 50)) +
   theme_minimal()
 
+
+job_cat_vs_age<-lm(`Age`~ `Job Category`, data = customer_data)
+summary(job_cat_vs_age)
 ```
