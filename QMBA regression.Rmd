@@ -268,7 +268,54 @@ final_model <- glm(
   `High Value Customer` ~ 
     `Streaming Svcs` +
     `Facebook Acct` +
+    `Retired` +
     `Wireless Internet`,
+  data = mod_data,
+  family = binomial
+)
+summary(final_model)
+odds <- exp(coef(final_model))
+
+# Extract deviances
+null_dev <- final_model$null.deviance
+resid_dev <- final_model$deviance
+
+# Degrees of freedom
+df_null <- final_model$df.null
+df_resid <- final_model$df.residual
+df_diff <- df_null - df_resid
+
+# Likelihood Ratio Test (Chi-square)
+chi_sq <- null_dev - resid_dev
+
+# p-value
+p_value <- pchisq(chi_sq, df = df_diff, lower.tail = FALSE)
+
+# McFadden's R^2
+pseudo_r2 <- 1 - (resid_dev / null_dev)
+
+# Print results
+cat("Likelihood Ratio Test (Chi-square):\n")
+cat("Chi-square =", round(chi_sq, 4), "\n")
+cat("Degrees of freedom =", df_diff, "\n")
+cat("p-value =", round(p_value, 6), "\n\n")
+
+cat("McFadden's R-squared:\n")
+cat("Pseudo R^2 =", round(pseudo_r2, 6), "\n")
+```
+```{r}
+final_model <- glm(
+  `Retired` ~ 
+    `Number Pets` +
+    `Car Value` +
+    `Active Lifestyle` +
+    `Wireless Internet` +
+    `Active Lifestyle` +
+    `LinkedIn Acct` +
+    `News Subscriber` +
+    `Streaming Svcs` +
+    `Votes` +
+    `Car Ownership`,
   data = mod_data,
   family = binomial
 )
